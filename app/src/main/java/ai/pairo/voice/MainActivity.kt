@@ -223,6 +223,59 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
+        fun setAlarm(jam: String, label: String) {
+            runOnUiThread {
+                try {
+                    val p = jam.split(":")
+                    val h = (p.getOrNull(0)?.trim()?.toIntOrNull() ?: 7).coerceIn(0, 23)
+                    val mnt = (p.getOrNull(1)?.trim()?.toIntOrNull() ?: 0).coerceIn(0, 59)
+                    startActivity(
+                        android.content.Intent(android.provider.AlarmClock.ACTION_SET_ALARM).apply {
+                            putExtra(android.provider.AlarmClock.EXTRA_HOUR, h)
+                            putExtra(android.provider.AlarmClock.EXTRA_MINUTES, mnt)
+                            putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label)
+                            putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true)
+                        }
+                    )
+                } catch (_: Exception) {}
+            }
+        }
+
+        @JavascriptInterface
+        fun startTimer(menit: Int) {
+            runOnUiThread {
+                try {
+                    startActivity(
+                        android.content.Intent(android.provider.AlarmClock.ACTION_SET_TIMER).apply {
+                            putExtra(android.provider.AlarmClock.EXTRA_LENGTH, menit.coerceIn(1, 600) * 60)
+                            putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "P.A.I.R.O")
+                            putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true)
+                        }
+                    )
+                } catch (_: Exception) {}
+            }
+        }
+
+        @JavascriptInterface
+        fun openApp(nama: String) {
+            runOnUiThread {
+                try {
+                    val pm = packageManager
+                    val cari = nama.trim().lowercase()
+                    if (cari.isEmpty()) return@runOnUiThread
+                    val app = pm.getInstalledApplications(0).firstOrNull {
+                        pm.getApplicationLabel(it).toString().lowercase().contains(cari)
+                    }
+                    val niat = app?.let { pm.getLaunchIntentForPackage(it.packageName) }
+                    if (niat != null) {
+                        niat.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(niat)
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
+        @JavascriptInterface
         fun openSettings() {
             try {
                 startActivity(

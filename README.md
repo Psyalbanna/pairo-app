@@ -5,8 +5,28 @@ Pembungkus tipis untuk halaman suara P.A.I.R.O yang sudah berjalan di
 aplikasi ini menambahkan tiga hal yang tidak bisa diberikan halaman web:
 
 - **pengenalan suara native** (WebView Android tidak punya Web Speech API)
-- **notifikasi persisten** dengan tombol *Berhenti*
+- **notifikasi persisten** dengan tombol *Bicara* dan *Berhenti*
 - kehadiran sebagai aplikasi sungguhan di laci aplikasi
+
+## Isi versi 1.5
+
+- **Anti-gema**: mikrofon diredam selama suara P.A.I.R.O keluar, menyala lagi
+  250–300 ms setelah selesai. Tanpa ini, ia merekam suaranya sendiri.
+- **Mode siaga**: sakelar di pojok kiri atas. Saat aktif, ia hanya menanggapi
+  ucapan yang mengandung "pairo", sisanya diabaikan.
+- **Aksi perangkat**: alarm, timer, dan membuka aplikasi — dijalankan lewat
+  Intent Android, tanpa biaya.
+- **Pemeriksa pembaruan**: aplikasi menanyakan `/update.json` ke server dan
+  menawarkan tombol *Perbarui* bila ada versi lebih baru.
+- **Sapaan pembuka** sekali sehari: waktu, sisa penyimpanan, dan ringkasan
+  obrolan kemarin.
+
+## Cara memperbarui
+
+1. Jalankan `build.bat` lagi (nomor versi sudah dinaikkan di `app/build.gradle.kts`)
+2. Pasang APK baru — ia menimpa yang lama tanpa menghapus kunci akses
+3. Pembaruan hanya diterima bila ditandatangani kunci yang sama, jadi bangunlah
+   di mesin yang sama atau simpan kunci rilisnya
 
 ## Cara membuat APK (lewat GitHub Actions, tanpa memasang apa pun)
 
