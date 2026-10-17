@@ -31,6 +31,8 @@ class MainActivity : Activity() {
 
     private lateinit var web: WebView
     private lateinit var speech: Speech
+    private lateinit var downloadReceiver: android.content.BroadcastReceiver
+    private var pendingDownload = -1L
     private val prefs by lazy { getSharedPreferences("pairo", Context.MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,6 +95,36 @@ class MainActivity : Activity() {
             }
         }
         Bus.onStop = { runOnUiThread { speech.stop() } }
+        Bus.onStart = { runOnUiThread { js("window.pairoExternalStart&&pairoExternalStart()") } }
+
+        downloadReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: android.content.Intent?) {
+                if (intent?.action != android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
+                val id = intent.getLongExtra(android.app.DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
+                if (id != pendingDownload) return
+                try {
+                    val dm = getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+                    val uri = dm.getUriForDownloadedFile(id) ?: return
+                    startActivity(
+                        android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/vnd.android.package-archive")
+                            addFlags(
+                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                    android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                            )
+                        }
+                    )
+                } catch (_: Exception) {
+                }
+            }
+        }
+        val filter = android.content.IntentFilter(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(downloadReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(downloadReceiver, filter)
+        }
 
         ask(Manifest.permission.RECORD_AUDIO, RC_MIC)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -170,6 +202,59 @@ class MainActivity : Activity() {
             runOnUiThread { speech.stop() }
         }
 
+        /** Meredam mikrofon selama suara saya keluar, supaya tidak merekam diri sendiri. */
+        @JavascriptInterface
+        fun muteRec() {
+            runOnUiThread { speech.pause() }
+        }
+
+        @JavascriptInterface
+        fun unmuteRec() {
+            runOnUiThread { speech.resume() }
+        }
+
+        @JavascriptInterface
+        fun versionCode(): Int = try {
+            val pi = packageManager.getPackageInfo(packageName, 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) pi.longVersionCode.toInt()
+            else @Suppress("DEPRECATION") pi.versionCode
+        } catch (_: Exception) {
+            0
+        }
+
+        @JavascriptInterface
+        fun openSettings() {
+            try {
+                startActivity(
+                    android.content.Intent(
+                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + packageName)
+                    )
+                )
+            } catch (_: Exception) {
+            }
+        }
+
+        /** Mengunduh APK pembaruan lalu membuka pemasangnya. */
+        @JavascriptInterface
+        fun installApk(url: String) {
+            runOnUiThread {
+                try {
+                    val dm = getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+                    val req = android.app.DownloadManager.Request(Uri.parse(url))
+                        .setTitle("P.A.I.R.O")
+                        .setDescription(getString(R.string.update_downloading))
+                        .setNotificationVisibility(
+                            android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                        )
+                        .setDestinationInExternalFilesDir(this@MainActivity, null, "pairo-update.apk")
+                        .setMimeType("application/vnd.android.package-archive")
+                    pendingDownload = dm.enqueue(req)
+                } catch (_: Exception) {
+                }
+            }
+        }
+
         @JavascriptInterface
         fun buzz(ms: Int) {
             try {
@@ -200,6 +285,8 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         Bus.onStop = null
+        Bus.onStart = null
+        try { unregisterReceiver(downloadReceiver) } catch (_: Exception) {}
         MicService.stop(this)
         speech.destroy()
         web.destroy()

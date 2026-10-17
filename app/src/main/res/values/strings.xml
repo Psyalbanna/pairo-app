@@ -7,4 +7,6 @@
     <string name="notif_title">P.A.I.R.O sedang mendengarkan</string>
     <string name="notif_text">Ketuk untuk membuka, atau hentikan dari sini</string>
     <string name="notif_stop">Berhenti</string>
+    <string name="notif_talk">Bicara</string>
+    <string name="update_downloading">Mengunduh pembaruan…</string>
 </resources>

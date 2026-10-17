@@ -28,6 +28,7 @@ class Speech(private val ctx: Context) {
 
     private var rec: SpeechRecognizer? = null
     private var running = false
+    private var paused = false
     private val handler = Handler(Looper.getMainLooper())
     private val restartTask = Runnable { begin() }
 
@@ -46,6 +47,23 @@ class Speech(private val ctx: Context) {
         handler.removeCallbacks(restartTask)
         try { rec?.cancel() } catch (_: Exception) {}
         sink?.onStopped()
+    }
+
+    /** Berhenti mendengar sementara tanpa menutup sesi atau notifikasi. */
+    fun pause() {
+        if (!running) return
+        paused = true
+        running = false
+        handler.removeCallbacks(restartTask)
+        try { rec?.cancel() } catch (_: Exception) {}
+    }
+
+    /** Menyambung lagi setelah jeda (dipakai seusai saya selesai bicara). */
+    fun resume() {
+        paused = false
+        if (running) return
+        running = true
+        begin()
     }
 
     fun destroy() {
