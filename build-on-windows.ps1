@@ -7,6 +7,19 @@ $root  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $tools = Join-Path $root ".buildtools"
 New-Item -ItemType Directory -Force -Path $tools | Out-Null
 
+# semua keluaran dicatat, supaya kalau gagal ada jejaknya
+$log = Join-Path $root "build-log.txt"
+try { Start-Transcript -Path $log -Force | Out-Null } catch { }
+
+trap {
+    Write-Host ""
+    Write-Host "GAGAL: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Jejak lengkap ada di: $log"
+    try { Stop-Transcript | Out-Null } catch { }
+    Read-Host "Tekan Enter untuk menutup"
+    exit 1
+}
+
 function Bagian($teks) { Write-Host ""; Write-Host "=== $teks ===" -ForegroundColor Cyan }
 
 # ---------- 1. JDK 17 ----------
@@ -80,3 +93,7 @@ if (Test-Path $apk) {
 } else {
     Write-Host "Build gagal - lihat pesan galat di atas." -ForegroundColor Red
 }
+
+try { Stop-Transcript | Out-Null } catch { }
+Write-Host ""
+Read-Host "Tekan Enter untuk menutup jendela ini"
