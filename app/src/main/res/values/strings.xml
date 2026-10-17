@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">P.A.I.R.O</string>
+    <string name="token_title">Kunci akses</string>
+    <string name="token_hint">pairo-sir-2026</string>
+    <string name="token_ok">Simpan</string>
+    <string name="notif_title">P.A.I.R.O sedang mendengarkan</string>
+    <string name="notif_text">Ketuk untuk membuka, atau hentikan dari sini</string>
+    <string name="notif_stop">Berhenti</string>
+</resources>
