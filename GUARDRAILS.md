@@ -1,5 +1,27 @@
 # Pagar pengaman akses sistem (P.A.I.R.O Voice)
 
+## Status hari ini — jujur, tanpa dibaguskan
+
+| Bagian | Keadaan |
+|---|---|
+| Shell di HP (Termux/Shizuku) | **Tidak dipasang.** Keputusan sadar: HP tetap mikrofon, speaker, notifikasi |
+| Tangan P.A.I.R.O di server (`tools.py`) | **Terpasang & teruji** — 4 aksi, daftar putih mati |
+| Uji pagar (`test_pagar.py`) | **20 dari 20 serangan ditolak**, aksi tulis butuh "ya" |
+| Catatan audit (`audit.jsonl`) | **Terpasang**, mode 0600, terisi tiap aksi |
+| Batas laju | **Terpasang & teruji** (10/jam, 1 per 5 detik) |
+| Daftar putih di sisi aplikasi | **Belum** — belum ada aksi perangkat baru yang perlu dijaga |
+| Kedaluwarsa 7 hari | **Belum** — baru relevan kalau izin HP diberikan |
+| Pertahanan prompt injection | **Sebagian** — satu aksi per giliran sudah; penandaan "data" belum |
+
+Bukti bisa dijalankan sendiri di STB:
+
+```
+cd /root/.hermes/apps/pairo-voice
+.venv/bin/python test_pagar.py      # harus berakhir "ditolak: 20 dari 20"
+tail -5 audit.jsonl                 # jejak setiap aksi
+grep -rn "shell=True" *.py          # harus kosong
+```
+
 Prinsip utama: **kecerdasan tidak pernah menjadi penjaga.** Model bahasa tidak
 boleh memegang wewenang; semua pembatasan ditegakkan di kode, di dua tempat
 (server dan aplikasi), bukan lewat kalimat di prompt.
@@ -126,3 +148,21 @@ yang lupa dicabut tidak hidup selamanya.
 - Penyadapan jaringan di luar Tailscale.
 
 Skema ini mengecilkan kemungkinan dan dampak, bukan menghilangkannya.
+
+---
+
+## Mengapa tangan ada di server, bukan di ponsel
+
+Aksi yang dijalankan di server hanya bisa menyentuh server: berkas rencana,
+layanan, skrip pemeliharaan. Kalau model salah memilih, yang rusak adalah kotak
+headless di sudut kamar yang bisa di-reset — bukan ponsel yang berisi foto,
+pesan, dan aplikasi bank.
+
+Empat aksi yang ada sekarang semuanya lahir dari kebutuhan nyata: menanyakan
+kondisi, melihat isi folder kerja, dan menjalankan dua skrip pemeliharaan yang
+sudah dipakai sehari-hari. Tidak ada satu pun yang bisa menghapus, memasang,
+atau mengirim apa pun keluar.
+
+Kalau nanti sebuah aksi benar-benar harus menyentuh ponsel, ia harus melewati
+lapisan 1 sampai 12 di atas **plus** daftar putih di sisi aplikasi — dan itu
+pekerjaan terpisah, bukan tambahan diam-diam.
